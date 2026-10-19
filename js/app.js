@@ -258,7 +258,9 @@
   function download() {
     const file = pdfFile();
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(file);
+    // iPhone の Safari は application/pdf だと保存せずに画面遷移して表示してしまうため、
+    // 汎用バイナリとして渡してダウンロード確認を出させる
+    a.href = URL.createObjectURL(IS_IOS ? new Blob([file], { type: 'application/octet-stream' }) : file);
     a.download = file.name;
     document.body.appendChild(a);
     a.click();
