@@ -1,0 +1,4 @@
+# 個人情報を含むPDFや入力データは絶対にコミットしない
+*.pdf
+*.json
+!package.json

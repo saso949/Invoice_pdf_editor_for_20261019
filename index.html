@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>保険金請求書 入力ツール</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%222%22 y=%221%22 width=%2212%22 height=%2214%22 rx=%221%22 fill=%22%231f6feb%22/%3E%3Cpath d=%22M5 5h6M5 8h6M5 11h4%22 stroke=%22white%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>火災・新種保険金請求書 入力ツール</h1>
+  <p class="lead">入力内容とPDFはこのブラウザの中だけで処理されます。どこにも送信しません。</p>
+</header>
+
+<main class="layout">
+  <form id="form" class="form" autocomplete="off" onsubmit="return false">
+
+    <!-- テンプレート -->
+    <section class="card" id="template-card">
+      <h2>0. 元のPDF</h2>
+      <p class="hint">保険会社から届いた「保険金請求書（火災新種用）.pdf」を選んでください。一度選ぶとこの端末に保存されます。</p>
+      <label class="drop" id="drop">
+        <input type="file" id="template-file" accept="application/pdf,.pdf">
+        <span id="template-status">PDFを選択（またはここにドロップ）</span>
+      </label>
+      <button type="button" class="link" id="template-clear" hidden>保存したPDFを削除</button>
+    </section>
+
+    <!-- 1 -->
+    <section class="card">
+      <h2><span class="num">1</span>記入日・被保険者</h2>
+      <div class="row">
+        <label>記入日
+          <span class="inline"><input type="date" name="kinyu_date"><button type="button" class="small" id="today">今日</button></span>
+        </label>
+      </div>
+      <p class="hint">証券番号・保険契約者・被保険者名は印字済みのため入力不要です。</p>
+      <label class="check"><input type="checkbox" name="same_as_contractor"> 被保険者は「保険契約者に同じ」に○</label>
+      <label>被保険者の生年月日（個人の場合のみ）<input type="date" name="birth_date"></label>
+    </section>
+
+    <!-- 2 -->
+    <section class="card">
+      <h2><span class="num">2</span>住所・氏名・連絡先</h2>
+      <div class="row">
+        <label class="w-zip">郵便番号
+          <span class="inline"><input name="zip1" inputmode="numeric" maxlength="3" placeholder="123"> − <input name="zip2" inputmode="numeric" maxlength="4" placeholder="4567"></span>
+        </label>
+        <label>都道府県
+          <select name="pref" id="pref"><option value="">選択</option></select>
+        </label>
+      </div>
+      <label>市区町村（1行目・都道府県の右）<input name="addr1" placeholder="横浜市港北区新横浜"></label>
+      <label>番地・建物名（2行目）<input name="addr2" placeholder="1丁目2番3号 ○○マンション101号室"></label>
+      <label>フリガナ<input name="name_kana" placeholder="サトウ イクヨ"></label>
+      <label>氏名<input name="name"></label>
+      <div class="row">
+        <label>日中連絡がつく電話番号
+          <span class="inline tel"><input name="tel1" inputmode="tel" placeholder="090"> − <input name="tel2" inputmode="tel" placeholder="1234"> − <input name="tel3" inputmode="tel" placeholder="5678"></span>
+        </label>
+      </div>
+      <details>
+        <summary>所有者が複数名の場合</summary>
+        <p class="hint">この欄は本人の署名と押印が必要です。手書きで書く場合は空けておいてください。</p>
+        <div class="row">
+          <label>氏名（2人目）<input name="co_owner1"></label>
+          <label>氏名（3人目）<input name="co_owner2"></label>
+        </div>
+      </details>
+      <p class="hint">押印欄には、印刷したあと押印してください。</p>
+    </section>
+
+    <!-- 3 -->
+    <section class="card">
+      <h2><span class="num">3</span>保険金の振込口座</h2>
+      <div class="radios" role="radiogroup">
+        <label><input type="radio" name="pay_method" value="" checked> 未選択</label>
+        <label><input type="radio" name="pay_method" value="furikae"> 保険料振替口座</label>
+        <label><input type="radio" name="pay_method" value="bank"> 金融機関</label>
+        <label><input type="radio" name="pay_method" value="yucho"> ゆうちょ銀行</label>
+      </div>
+
+      <fieldset class="sub" data-show="pay_method=bank">
+        <legend>金融機関</legend>
+        <div class="row">
+          <label>金融機関名<input name="bank_name" placeholder="三井住友"></label>
+          <div class="field">種別
+            <div class="radios compact">
+              <label><input type="radio" name="bank_type" value="" checked>なし</label>
+              <label><input type="radio" name="bank_type" value="銀行">銀行</label>
+              <label><input type="radio" name="bank_type" value="信金">信金</label>
+              <label><input type="radio" name="bank_type" value="信組">信組</label>
+              <label><input type="radio" name="bank_type" value="農協">農協</label>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <label>支店名<input name="branch_name"></label>
+          <div class="field">
+            <div class="radios compact">
+              <label><input type="radio" name="branch_type" value="" checked>なし</label>
+              <label><input type="radio" name="branch_type" value="支店">支店</label>
+              <label><input type="radio" name="branch_type" value="支所">支所</label>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <label class="w-s">店番号<input name="branch_no" inputmode="numeric" maxlength="3"></label>
+          <div class="field">預金種目
+            <div class="radios compact">
+              <label><input type="radio" name="acct_type" value="" checked>なし</label>
+              <label><input type="radio" name="acct_type" value="普通">普通・総合</label>
+              <label><input type="radio" name="acct_type" value="当座">当座</label>
+              <label><input type="radio" name="acct_type" value="貯蓄">貯蓄</label>
+              <label><input type="radio" name="acct_type" value="別段">別段</label>
+            </div>
+          </div>
+          <label class="w-m">口座番号（7桁）<input name="acct_no" inputmode="numeric" maxlength="7"></label>
+        </div>
+        <label>口座名義（カタカナ）<input name="bank_holder" data-kana placeholder="サトウ イクヨ"></label>
+        <div class="kana-preview" data-for="bank_holder"></div>
+      </fieldset>
+
+      <fieldset class="sub" data-show="pay_method=yucho">
+        <legend>ゆうちょ銀行</legend>
+        <div class="row">
+          <label class="w-m">通帳記号（1□□□0 の□3桁）
+            <span class="inline">1<input name="yucho_kigo" inputmode="numeric" maxlength="3" class="w-3">0</span>
+          </label>
+          <label class="w-m">通帳番号（最大8桁）<input name="yucho_no" inputmode="numeric" maxlength="8"></label>
+        </div>
+        <label>口座名義（カタカナ）<input name="yucho_holder" data-kana placeholder="サトウ イクヨ"></label>
+        <div class="kana-preview" data-for="yucho_holder"></div>
+      </fieldset>
+      <p class="hint">口座名義は1マス1文字です。姓と名の間にスペースを1つ入れてください。濁点と半濁点は自動で1マスに分けます。</p>
+    </section>
+
+    <!-- 4 -->
+    <section class="card">
+      <h2><span class="num">4</span>他の保険契約等</h2>
+      <div class="radios">
+        <label><input type="radio" name="other_ins" value="" checked> 未選択</label>
+        <label><input type="radio" name="other_ins" value="なし"> なし</label>
+        <label><input type="radio" name="other_ins" value="あり"> あり</label>
+      </div>
+      <fieldset class="sub" data-show="other_ins=あり">
+        <label>保険会社等の名称<input name="oi_company"></label>
+        <div class="row">
+          <label>保険の種類<input name="oi_kind"></label>
+          <label>証券番号<input name="oi_policy"></label>
+        </div>
+        <div class="row">
+          <label>保険契約者<input name="oi_holder"></label>
+          <div class="field">保険金請求の有無
+            <div class="radios compact">
+              <label><input type="radio" name="oi_claim" value="" checked>未選択</label>
+              <label><input type="radio" name="oi_claim" value="なし">なし</label>
+              <label><input type="radio" name="oi_claim" value="あり">あり</label>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </section>
+
+    <!-- 5 -->
+    <section class="card">
+      <h2><span class="num">5</span>事故・被害の内容</h2>
+      <div class="row">
+        <label>発生日<input type="date" name="occ_date"></label>
+        <label>時刻<input type="time" name="occ_time"></label>
+        <div class="field">
+          <div class="radios compact">
+            <label><input type="radio" name="occ_kind" value="" checked>未選択</label>
+            <label><input type="radio" name="occ_kind" value="発生">発生</label>
+            <label><input type="radio" name="occ_kind" value="発見">発見</label>
+          </div>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" name="place_same"> 発生場所は「表面2に記載の住所と同じ」に○</label>
+      <label>発生場所（住所と異なる場合）<input name="place"></label>
+      <label>発生状況（3行まで。長いと文字を縮小します）<textarea name="situation" rows="4"></textarea></label>
+
+      <details>
+        <summary>盗難の場合（警察への届出）</summary>
+        <div class="row">
+          <label>届出警察署（「警察署」は不要）<input name="police" placeholder="港北"></label>
+          <label>届出日<input type="date" name="police_date"></label>
+        </div>
+        <div class="row">
+          <label>届出人<input name="reporter"></label>
+          <label>受理番号<input name="receipt_no"></label>
+        </div>
+        <div class="row">
+          <label>現金の損害額（円）<input name="cash" inputmode="numeric"></label>
+          <label>預貯金の損害額（円）<input name="savings" inputmode="numeric"></label>
+        </div>
+      </details>
+    </section>
+
+    <!-- 6 -->
+    <section class="card">
+      <h2><span class="num">6</span>建物、家財・その他の動産の損害</h2>
+      <div class="row">
+        <label>建物の損害箇所<textarea name="damage_place" rows="2"></textarea></label>
+        <label class="w-m">修理金額（見積額・請求額, 円）<input name="repair_amount" inputmode="numeric"></label>
+      </div>
+      <h3>家財・その他の動産</h3>
+      <p class="hint">購入金額を空欄にすると「単価 × 数量」で自動計算します。</p>
+      <div class="table-wrap">
+        <table class="items">
+          <thead>
+            <tr><th>#</th><th>品名</th><th>メーカー・型式</th><th>購入年</th><th>月</th><th>購入単価</th><th>数量</th><th>購入金額</th></tr>
+          </thead>
+          <tbody id="items"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>保存・その他</h2>
+      <label class="check"><input type="checkbox" id="persist" checked> 入力内容をこの端末（ブラウザ）に保存する</label>
+      <label class="check"><input type="checkbox" id="include-examples"> 記入例ページ（3〜4ページ）も出力に含める</label>
+      <div class="buttons">
+        <button type="button" id="export-json">入力内容をファイルに書き出し</button>
+        <label class="button">入力内容を読み込み<input type="file" id="import-json" accept="application/json,.json" hidden></label>
+        <button type="button" class="danger" id="reset">入力内容をすべて消去</button>
+      </div>
+    </section>
+  </form>
+
+  <aside class="preview-pane">
+    <div class="actions">
+      <button type="button" id="refresh">プレビュー更新</button>
+      <button type="button" class="primary" id="download" disabled>PDFをダウンロード</button>
+    </div>
+    <p id="message" class="message" role="status"></p>
+    <div id="preview" class="preview"><p class="placeholder">PDFを選ぶとここにプレビューが表示されます</p></div>
+  </aside>
+</main>
+
+<script src="lib/pdf-lib.min.js"></script>
+<script src="lib/fontkit.umd.min.js"></script>
+<script src="lib/pdf.min.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/subset.js"></script>
+<script src="js/fill.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
