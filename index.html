@@ -12,6 +12,7 @@
 <header class="app-header">
   <h1>火災・新種保険金請求書 入力ツール</h1>
   <p class="lead">入力内容とPDFはこのブラウザの中だけで処理されます。どこにも送信しません。</p>
+  <p class="warning" id="inapp-warning" hidden>アプリ内のブラウザではダウンロードできません。右上（または下）のメニューから「Safariで開く」「ブラウザで開く」を選んでください。</p>
 </header>
 
 <main class="layout">
@@ -233,9 +234,10 @@
   <aside class="preview-pane">
     <div class="actions">
       <button type="button" id="refresh">プレビュー更新</button>
-      <button type="button" class="primary" id="download" disabled>PDFをダウンロード</button>
+      <button type="button" id="share" hidden>共有</button>
+      <button type="button" class="primary" id="download">PDFをダウンロード</button>
+      <p id="message" class="message" role="status" aria-live="polite"></p>
     </div>
-    <p id="message" class="message" role="status"></p>
     <div id="preview" class="preview"><p class="placeholder">PDFを選ぶとここにプレビューが表示されます</p></div>
   </aside>
 </main>

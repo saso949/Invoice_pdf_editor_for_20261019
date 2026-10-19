@@ -8,7 +8,19 @@
 
   const $ = (s) => document.querySelector(s);
   const form = $('#form');
-  const state = { template: null, templateName: '', fontBytes: null, subsetFont: null, pdfBytes: null, busy: false, again: false };
+  const state = { template: null, templateName: '', fontBytes: null, subsetFont: null, pdfBytes: null, busy: false, again: false, running: null, ver: 0, genVer: -1 };
+  const UA = navigator.userAgent;
+  const IS_IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+
+  // LINE のアプリ内ブラウザはダウンロードできないので、外部ブラウザ（Safari 等）で開き直す
+  if (/Line\//i.test(UA) && !/openExternalBrowser=1/.test(location.search)) {
+    const u = new URL(location.href);
+    u.searchParams.set('openExternalBrowser', '1');
+    location.replace(u.toString());
+  }
+  if (/Instagram|FBAN|FBAV|FB_IAB|wv\)/.test(UA)) {
+    $('#inapp-warning').hidden = false;
+  }
 
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js';
 
@@ -74,6 +86,7 @@
   }
 
   function writeForm(v) {
+    state.ver++;
     for (const el of form.elements) {
       if (!el.name || !(el.name in v)) continue;
       if (el.type === 'radio') el.checked = el.value === v[el.name];
@@ -195,44 +208,88 @@
     doc.destroy();
   }
 
+  // 入力のたびに ver を進め、生成済みPDFがどの ver のものかを genVer で持つ
+  const isFresh = () => state.pdfBytes && state.genVer === state.ver && !state.busy;
+
   async function refresh() {
     if (!state.template) return;
-    if (state.busy) { state.again = true; return; }
+    if (state.busy) { state.again = true; return state.running; }
     state.busy = true;
-    message('生成中…');
+    state.running = (async () => {
+      const ver = state.ver;
+      message('PDFを作成中…');
+      try {
+        state.pdfBytes = await generate();
+        state.genVer = ver;
+        message('');
+      } catch (e) {
+        console.error(e);
+        message('PDFの作成に失敗しました: ' + e.message, true);
+        return;
+      }
+      try {
+        await renderPreview(state.pdfBytes);
+      } catch (e) {
+        // プレビューに失敗してもダウンロードはできる
+        console.error(e);
+        message('プレビューを表示できませんでしたが、ダウンロードはできます');
+      }
+    })();
     try {
-      const bytes = await generate();
-      state.pdfBytes = bytes;
-      $('#download').disabled = false;
-      await renderPreview(bytes);
-      message('');
-    } catch (e) {
-      console.error(e);
-      message('PDFの生成に失敗しました: ' + e.message, true);
+      await state.running;
     } finally {
       state.busy = false;
-      if (state.again) { state.again = false; refresh(); }
+      if (state.again) { state.again = false; await refresh(); }
     }
   }
 
   let timer = 0;
   function scheduleRefresh() {
     clearTimeout(timer);
-    timer = setTimeout(refresh, 700);
+    timer = setTimeout(refresh, 600);
+  }
+
+  function pdfFile() {
+    const t = new Date();
+    const ymd = `${t.getFullYear()}${String(t.getMonth() + 1).padStart(2, '0')}${String(t.getDate()).padStart(2, '0')}`;
+    return new File([state.pdfBytes], `保険金請求書_記入済_${ymd}.pdf`, { type: 'application/pdf' });
   }
 
   function download() {
-    if (!state.pdfBytes) return;
-    const blob = new Blob([state.pdfBytes], { type: 'application/pdf' });
+    const file = pdfFile();
     const a = document.createElement('a');
-    const t = new Date();
-    const ymd = `${t.getFullYear()}${String(t.getMonth() + 1).padStart(2, '0')}${String(t.getDate()).padStart(2, '0')}`;
-    a.href = URL.createObjectURL(blob);
-    a.download = `保険金請求書_記入済_${ymd}.pdf`;
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    message(IS_IOS
+      ? 'ダウンロードを開始しました。確認が出たら「ダウンロード」を押してください。「ファイル」アプリの「ダウンロード」フォルダに保存されます。保存できない場合は「共有」ボタンから「\"ファイル\"に保存」を選んでください。'
+      : 'ダウンロードしました');
+  }
+
+  async function share() {
+    try {
+      await navigator.share({ files: [pdfFile()], title: '保険金請求書' });
+    } catch (e) {
+      if (e.name !== 'AbortError') message('共有できませんでした: ' + e.message, true);
+    }
+  }
+
+  // ボタンを押した時点で最新のPDFがあれば、その場で保存する（iPhone は操作直後でないと保存を止めることがある）
+  async function onSave(deliver) {
+    if (!state.template) {
+      message('先に「0. 元のPDF」で保険会社のPDFを選んでください（端末ごとに1回必要です）', true);
+      $('#template-card').scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (isFresh()) { deliver(); return; }
+    clearTimeout(timer);
+    await refresh();
+    if (state.genVer !== state.ver || !state.pdfBytes) return; // 失敗時はメッセージ表示済み
+    if (IS_IOS) message('PDFができました。もう一度ボタンを押してください。');
+    else deliver();
   }
 
   // ---------- テンプレートPDF ----------
@@ -276,7 +333,7 @@
     await idbDel('template').catch(() => {});
     state.template = null;
     state.pdfBytes = null;
-    $('#download').disabled = true;
+    state.genVer = -1;
     $('#template-status').textContent = 'PDFを選択（またはここにドロップ）';
     $('#template-clear').hidden = true;
     $('#drop').classList.remove('loaded');
@@ -285,6 +342,7 @@
 
   form.addEventListener('input', (e) => {
     if (e.target.type === 'file') return;
+    state.ver++;
     if (e.target.dataset.kana !== undefined) updateKanaPreviews();
     if (/^item\d+_(price|qty)$/.test(e.target.name)) updateAmountPlaceholders();
     updateVisibility();
@@ -294,11 +352,13 @@
   form.addEventListener('change', (e) => {
     if (e.target.dataset.kana !== undefined) {
       // 全角カタカナに整える
+      state.ver++;
       e.target.value = e.target.value.normalize('NFKC')
         .replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60))
         .replace(/\s+/g, ' ');
       updateKanaPreviews();
       save();
+      scheduleRefresh();
     }
   });
 
@@ -311,12 +371,9 @@
   });
 
   $('#refresh').addEventListener('click', refresh);
-  $('#download').addEventListener('click', async () => {
-    clearTimeout(timer);
-    await refresh();
-    download();
-  });
-  $('#include-examples').addEventListener('change', scheduleRefresh);
+  $('#download').addEventListener('click', () => onSave(download));
+  $('#share').addEventListener('click', () => onSave(share));
+  $('#include-examples').addEventListener('change', () => { state.ver++; scheduleRefresh(); });
 
   $('#persist').addEventListener('change', (e) => {
     safeStorage(() => localStorage.setItem(PERSIST_KEY, e.target.checked ? '1' : '0'));
@@ -349,6 +406,7 @@
     if (!window.confirm('入力内容をすべて消去しますか？（元のPDFは残ります）')) return;
     const keep = [$('#persist').checked, $('#include-examples').checked];
     form.reset();
+    state.ver++;
     [$('#persist').checked, $('#include-examples').checked] = keep;
     safeStorage(() => localStorage.removeItem(STORAGE_KEY));
     updateVisibility();
@@ -366,6 +424,9 @@
       if (saved) writeForm(saved);
     }
     updateVisibility();
+    try {
+      $('#share').hidden = !((IS_IOS || /Android/.test(UA)) && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] }));
+    } catch (e) { /* 共有非対応 */ }
     ensureFont().catch((e) => message(e.message, true));
     const stored = await idbGet('template').catch(() => null);
     if (stored && stored.bytes) setTemplate(new Uint8Array(stored.bytes), stored.name, false);
