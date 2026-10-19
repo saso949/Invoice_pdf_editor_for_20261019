@@ -370,7 +370,6 @@
     scheduleRefresh();
   });
 
-  $('#refresh').addEventListener('click', refresh);
   $('#download').addEventListener('click', () => onSave(download));
   $('#share').addEventListener('click', () => onSave(share));
   $('#include-examples').addEventListener('change', () => { state.ver++; scheduleRefresh(); });

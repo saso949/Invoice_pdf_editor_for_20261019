@@ -166,7 +166,7 @@ button.link { border: 0; background: none; color: var(--danger); padding: 4px 0;
   background: var(--card); border: 1px solid var(--line); border-radius: 10px;
   padding: 10px; margin-bottom: 8px;
 }
-.actions .primary { margin-left: auto; }
+.actions button { flex: 1 1 0; white-space: nowrap; }
 .message { flex-basis: 100%; margin: 0; font-size: .85rem; color: var(--muted); }
 .message:empty { display: none; }
 .message.error { color: var(--danger); font-weight: 600; }
@@ -183,7 +183,7 @@ button.link { border: 0; background: none; color: var(--danger); padding: 4px 0;
     padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
     box-shadow: 0 -2px 8px rgba(0, 0, 0, .15);
   }
-  .actions button { padding: 10px 14px; font-size: 1rem; }
+  .actions button { padding: 12px 8px; font-size: 1rem; }
 }
 .preview {
   max-height: calc(100vh - 110px);
