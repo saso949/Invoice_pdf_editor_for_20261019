@@ -38,6 +38,12 @@ python -m http.server 8000
 # http://localhost:8000/ を開く
 ```
 
+## 更新の反映（キャッシュ対策）
+
+コミットすると `.githooks/pre-commit` が `tools/bump-version.sh` を実行し、`index.html` の `?v=` と `version.json` を同じ値に更新します。古いページを開いた端末は、`version.json` と値が違うことに気づいて、最新版を自動で読み込み直します。
+
+別の場所に clone したときは、最初に `git config core.hooksPath .githooks` を実行してください。
+
 ## 記入位置の調整
 
 記入位置は `js/layout.js` にまとめてあります（単位はポイント、原点は左上）。ずれている欄があれば、その欄の `x` / `cy` を調整してください。
