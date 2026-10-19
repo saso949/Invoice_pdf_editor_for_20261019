@@ -2,3 +2,4 @@
 *.pdf
 *.json
 !package.json
+!version.json

@@ -1,0 +1,4 @@
+#!/bin/sh
+# コミットのたびにバージョン番号を更新する
+sh tools/bump-version.sh >/dev/null
+git add index.html version.json

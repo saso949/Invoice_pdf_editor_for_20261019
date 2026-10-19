@@ -424,6 +424,7 @@
       if (saved) writeForm(saved);
     }
     updateVisibility();
+    $('#version').textContent = `（版 ${window.APP_VERSION}）`;
     try {
       $('#share').hidden = !((IS_IOS || /Android/.test(UA)) && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] }));
     } catch (e) { /* 共有非対応 */ }
